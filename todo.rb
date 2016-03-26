@@ -2,6 +2,7 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'sinatra/content_for'
 require 'tilt/erubis'
+require "byebug"
 
 configure do
   enable :sessions
@@ -49,6 +50,32 @@ post '/lists' do
 end
 
 get '/lists/:id' do
-  @list = session[:lists][params[:id].to_i]
+  id = params[:id].to_i
+  @list = session[:lists][id]
+
   erb :list, layout: :layout
+end
+
+get '/lists/:id/edit' do
+  id = params[:id].to_i
+  @list = session[:lists][id]
+
+  erb :edit_list, layout: :layout
+end
+
+post '/lists/:id' do
+  list_name = params[:list_name].strip
+  id = id.to_i
+  @list = session[:lists][id]
+
+  error = error_for_list_name(list_name)
+
+  if error
+    session[:error] = error
+    erb :edit_list, layout: :layout
+  else
+    @list[:name] = list_name
+    session[:success] = 'The list has been updated.'
+    redirect "/lists/#{id}"
+  end
 end

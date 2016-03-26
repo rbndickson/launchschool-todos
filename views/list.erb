@@ -1,6 +1,9 @@
 <section id="todos">
   <header>
     <h2><%= @list[:name] %></h2>
+    <ul>
+      <li><a href="/lists/<%= params[:id] %>/edit" class="edit">Edit</a></li>
+    </ul>
   </header>
 </section>
 
