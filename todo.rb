@@ -2,7 +2,6 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'sinatra/content_for'
 require 'tilt/erubis'
-require "byebug"
 
 configure do
   enable :sessions
@@ -80,10 +79,10 @@ post '/lists/:id' do
   end
 end
 
-post "/lists/:id/destroy" do
+post '/lists/:id/destroy' do
   id = params[:id].to_i
   session[:lists].delete_at(id)
-  session[:success] = "The list has been deleted."
+  session[:success] = 'The list has been deleted.'
   redirect "/lists"
 end
 
@@ -93,7 +92,7 @@ def error_for_todo(name)
   end
 end
 
-post "/lists/:list_id/todos" do
+post '/lists/:list_id/todos' do
   @list_id = params[:list_id].to_i
   @list = session[:lists][@list_id]
   text = params[:todo].strip
@@ -104,17 +103,29 @@ post "/lists/:list_id/todos" do
     erb :list, layout: :layout
   else
     @list[:todos] << { name: text, completed: false }
-    session[:success] = "The todo was added."
+    session[:success] = 'The todo was added.'
     redirect "/lists/#{@list_id}"
   end
 end
 
-post "/lists/:list_id/todos/:todo_id/destroy" do
+post '/lists/:list_id/todos/:todo_id/destroy' do
   @list_id = params[:list_id].to_i
   @list = session[:lists][@list_id]
 
   todo_id = params[:todo_id].to_i
   @list[:todos].delete_at(todo_id)
-  session[:success] = "The todo has been deleted."
+  session[:success] = 'The todo has been deleted.'
+  redirect "/lists/#{@list_id}"
+end
+
+post '/lists/:list_id/todos/:id' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
+
+  todo_id = params[:todo_id].to_i
+  is_completed = params[:completed] == 'true'
+  @list[:todos][todo_id][:completed] = is_completed
+
+  session[:success] = 'The todo has been updated.'
   redirect "/lists/#{@list_id}"
 end
