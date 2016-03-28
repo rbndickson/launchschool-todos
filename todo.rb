@@ -2,11 +2,46 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'sinatra/content_for'
 require 'tilt/erubis'
-require "byebug"
 
 configure do
   enable :sessions
   set :session_secret, 'secret'
+end
+
+helpers do
+  def list_complete?(list)
+    todos_total(list) > 0 && todos_remaining(list) == 0
+  end
+
+  def list_class(list)
+    'complete' if list_complete?(list)
+  end
+
+  def todos_total(list)
+    list[:todos].size
+  end
+
+  def todos_remaining(list)
+    list[:todos].select { |todo| !todo[:completed] }.size
+  end
+
+  def sort_lists(lists, &block)
+    complete_lists, incomplete_lists = lists.partition do |list|
+      list_complete?(list)
+    end
+
+    incomplete_lists.each { |list| yield list, lists.index(list) }
+    complete_lists.each { |list| yield list, lists.index(list) }
+  end
+
+  def sort_todos(todos, &block)
+    complete_todos, incomplete_todos = todos.partition do |todo|
+      todo[:completed]
+    end
+
+    incomplete_todos.each { |todo| yield todo, todos.index(todo) }
+    complete_todos.each { |todo| yield todo, todos.index(todo) }
+  end
 end
 
 before do
@@ -49,24 +84,24 @@ post '/lists' do
   end
 end
 
-get '/lists/:id' do
-  @list_id = params[:id].to_i
+get '/lists/:list_id' do
+  @list_id = params[:list_id].to_i
   @list = session[:lists][@list_id]
 
   erb :list, layout: :layout
 end
 
-get '/lists/:id/edit' do
-  id = params[:id].to_i
-  @list = session[:lists][id]
+get '/lists/:list_id/edit' do
+  list_id = params[:list_id].to_i
+  @list = session[:lists][list_id]
 
   erb :edit_list, layout: :layout
 end
 
-post '/lists/:id' do
+post '/lists/:list_id' do
   list_name = params[:list_name].strip
-  id = params[:id].to_i
-  @list = session[:lists][id]
+  list_id = params[:list_id].to_i
+  @list = session[:lists][list_id]
 
   error = error_for_list_name(list_name)
 
@@ -76,13 +111,13 @@ post '/lists/:id' do
   else
     @list[:name] = list_name
     session[:success] = 'The list has been updated.'
-    redirect "/lists/#{id}"
+    redirect "/lists/#{list_id}"
   end
 end
 
-post '/lists/:id/destroy' do
-  id = params[:id].to_i
-  session[:lists].delete_at(id)
+post '/lists/:list_id/destroy' do
+  list_id = params[:list_id].to_i
+  session[:lists].delete_at(list_id)
   session[:success] = 'The list has been deleted.'
   redirect "/lists"
 end
@@ -119,7 +154,7 @@ post '/lists/:list_id/todos/:todo_id/destroy' do
   redirect "/lists/#{@list_id}"
 end
 
-post '/lists/:list_id/todos/:id' do
+post '/lists/:list_id/todos/:todo_id' do
   @list_id = params[:list_id].to_i
   @list = session[:lists][@list_id]
 
