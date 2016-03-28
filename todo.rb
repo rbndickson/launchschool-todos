@@ -2,6 +2,7 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'sinatra/content_for'
 require 'tilt/erubis'
+require "byebug"
 
 configure do
   enable :sessions
@@ -127,5 +128,17 @@ post '/lists/:list_id/todos/:id' do
   @list[:todos][todo_id][:completed] = is_completed
 
   session[:success] = 'The todo has been updated.'
+  redirect "/lists/#{@list_id}"
+end
+
+post '/lists/:list_id/complete_all' do
+  @list_id = params[:list_id].to_i
+  @list = session[:lists][@list_id]
+
+  @list[:todos].each do |todo|
+    todo[:completed] = true
+  end
+
+  session[:success] = 'All todos have been completed.'
   redirect "/lists/#{@list_id}"
 end
