@@ -85,16 +85,25 @@ post '/lists' do
   end
 end
 
+def load_list(index)
+  list = session[:lists][index] if index
+  return list if list
+
+  session[:error] = "The list you requested was not found."
+  redirect "/lists"
+  halt
+end
+
 get '/lists/:list_id' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   erb :list, layout: :layout
 end
 
 get '/lists/:list_id/edit' do
   list_id = params[:list_id].to_i
-  @list = session[:lists][list_id]
+  @list = load_list(list_id)
 
   erb :edit_list, layout: :layout
 end
@@ -102,7 +111,7 @@ end
 post '/lists/:list_id' do
   list_name = params[:list_name].strip
   list_id = params[:list_id].to_i
-  @list = session[:lists][list_id]
+  @list = load_list(list_id)
 
   error = error_for_list_name(list_name)
 
@@ -131,7 +140,7 @@ end
 
 post '/lists/:list_id/todos' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
   text = params[:todo].strip
 
   error = error_for_todo(text)
@@ -147,7 +156,7 @@ end
 
 post '/lists/:list_id/todos/:todo_id/destroy' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   todo_id = params[:todo_id].to_i
   @list[:todos].delete_at(todo_id)
@@ -157,7 +166,7 @@ end
 
 post '/lists/:list_id/todos/:todo_id' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   todo_id = params[:todo_id].to_i
   is_completed = params[:completed] == 'true'
@@ -169,7 +178,7 @@ end
 
 post '/lists/:list_id/complete_all' do
   @list_id = params[:list_id].to_i
-  @list = session[:lists][@list_id]
+  @list = load_list(@list_id)
 
   @list[:todos].each do |todo|
     todo[:completed] = true
